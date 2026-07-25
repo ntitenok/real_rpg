@@ -1,0 +1,28 @@
+[project]
+name = "rpg-real"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "ntitenok"}
+]
+readme = "README.md"
+requires-python = ">=3.14,<4.0"
+dependencies = [
+    "flask (>=3.1.3,<4.0.0)",
+    "flask-cors (>=6.0.5,<7.0.0)",
+    "flask-sqlalchemy (>=3.1.1,<4.0.0)",
+    "psycopg2-binary (>=2.9.12,<3.0.0)",
+    "python-dotenv (>=1.2.2,<2.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+package-mode = false
+[dependency-groups]
+dev = [
+    "ruff (>=0.16.0,<0.17.0)"
+]
