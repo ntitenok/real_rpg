@@ -57,7 +57,6 @@ def login():
 
 # ===== Создание таблиц =====
 with app.app_context():
-    db.drop_all()
     db.create_all()
 
 # ===== Запуск сервера =====
