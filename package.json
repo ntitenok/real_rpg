@@ -1,0 +1,27 @@
+{
+  "name": "rpg_real",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint frontend/js/**/*.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ntitenok/real_rpg.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ntitenok/real_rpg/issues"
+  },
+  "homepage": "https://github.com/ntitenok/real_rpg#readme",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.8.0",
+    "globals": "^17.8.0"
+  }
+}
