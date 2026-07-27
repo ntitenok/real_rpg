@@ -1,0 +1,128 @@
+        body {
+            background: #0f0b0a;
+            color: #d4c8b0;
+            font-family: 'Georgia', serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            border: 1px solid rgba(180, 150, 100, 0.3);
+            border-radius: 20px;
+            padding: 40px;
+            background: rgba(20, 16, 14, 0.85);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+        }
+        h1 {
+            color: #e8d5a0;
+            letter-spacing: 4px;
+        }
+        .status {
+            color: #8a7a6a;
+            margin-top: 20px;
+        }
+        .status span {
+            color: #8bc34a;
+        }
+
+                /* ===== ДВУХКОЛОНОЧНЫЙ МАКЕТ С ВЕРТИКАЛЬНЫМ МЕНЮ ===== */
+        .app-layout {
+            display: flex;
+            gap: 24px;
+            margin-top: 16px;
+        }
+
+        /* ===== БОКОВАЯ ПАНЕЛЬ ===== */
+        .sidebar {
+            flex: 0 0 200px; /* фиксированная ширина 200px */
+            border-right: 1px solid rgba(180, 150, 100, 0.15);
+            padding-right: 16px;
+        }
+
+        /* ===== ВЕРТИКАЛЬНОЕ МЕНЮ ===== */
+        .tabs-nav-vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .tab-btn {
+            display: block;
+            width: 100%;
+            text-align: left;
+            background: transparent;
+            border: none;
+            padding: 10px 16px;
+            font-family: 'Georgia', serif;
+            font-size: 15px;
+            color: #8a7a6a;
+            cursor: pointer;
+            transition: 0.2s;
+            border-radius: 6px;
+            border-left: 3px solid transparent;
+            letter-spacing: 0.5px;
+        }
+
+        .tab-btn:hover {
+            color: #c8b898;
+            background: rgba(180, 150, 100, 0.05);
+        }
+
+        .tab-btn.active {
+            color: #e8d5a0;
+            background: rgba(180, 150, 100, 0.08);
+            border-left-color: #e8d5a0;
+        }
+
+        /* ===== ОСНОВНОЙ КОНТЕНТ ===== */
+        .main-content-area {
+            flex: 1;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== АДАПТИВНОСТЬ ДЛЯ МАЛЕНЬКИХ ЭКРАНОВ ===== */
+        @media (max-width: 768px) {
+            .app-layout {
+                flex-direction: column;
+            }
+            .sidebar {
+                flex: none;
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid rgba(180, 150, 100, 0.15);
+                padding-right: 0;
+                padding-bottom: 12px;
+            }
+            .tabs-nav-vertical {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+            .tab-btn {
+                width: auto;
+                padding: 6px 12px;
+                font-size: 13px;
+                border-left: none;
+                border-bottom: 2px solid transparent;
+            }
+            .tab-btn.active {
+                border-left: none;
+                border-bottom-color: #e8d5a0;
+            }
+}

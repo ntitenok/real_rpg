@@ -1,4 +1,4 @@
-// auth.js — управление авторизацией
+import { initTabs } from './tabs.js';
 
 // Получаем элементы DOM
 const authContainer = document.getElementById('auth-container');
@@ -26,6 +26,7 @@ function showProfile(username) {
     profileContainer.style.display = 'block';    // показываем профиль
     mainContent.style.display = 'block';         // показываем основной интерфейс
     usernameDisplay.textContent = username;
+    initTabs();
 }
 
 // Функция показа авторизации (выход)

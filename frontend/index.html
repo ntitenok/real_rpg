@@ -4,37 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RPG Менеджер задач</title>
-    <style>
-        body {
-            background: #0f0b0a;
-            color: #d4c8b0;
-            font-family: 'Georgia', serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .container {
-            text-align: center;
-            border: 1px solid rgba(180, 150, 100, 0.3);
-            border-radius: 20px;
-            padding: 40px;
-            background: rgba(20, 16, 14, 0.85);
-            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
-        }
-        h1 {
-            color: #e8d5a0;
-            letter-spacing: 4px;
-        }
-        .status {
-            color: #8a7a6a;
-            margin-top: 20px;
-        }
-        .status span {
-            color: #8bc34a;
-        }
-    </style>
+    <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
     <div id="auth-container">
@@ -51,41 +21,98 @@
         <button id="logout-btn">Выйти</button>
     </div>
 
-    <div id="main-content" style="display: none;">
-        <!-- Здесь остаётся твой существующий интерфейс -->
-        <nav class="tabs-nav">
-            <button class="tab-btn active" data-tab="focus">Фокус</button>
-            <button class="tab-btn" data-tab="tasks">Задачи</button>
-            <button class="tab-btn" data-tab="character">Персона</button>
-            <button class="tab-btn" data-tab="skills">Умения</button>
-            <button class="tab-btn" data-tab="achievements">Достижения</button>
-            <button class="tab-btn" data-tab="settings">Настройки</button>
-            </nav>
-        <!-- Контейнер для содержимого вкладок -->
-        <div class="tabs-content">
-            <!-- Вкладка "Фокус" -->
-            <div id="tab-focus" class="tab-content active">
-            <h2>Фокус</h2>
-            <p>Здесь будут ваши главные цели и майндакрта.</p>
+    <div id="main-content" style="display: none;"></div>
+        <div class="app-layout">
+            <!-- Боковая панель с меню -->
+            <aside class="sidebar">
+                <nav class="tabs-nav-vertical">
+                    <button class="tab-btn active" data-tab="focus">🗺️ Фокус</button>
+                    <button class="tab-btn" data-tab="game">⚔️ В игре</button>
+                    <button class="tab-btn" data-tab="tasks">📋 Журнал</button>
+                    <button class="tab-btn" data-tab="character">🧙 Навыки</button>
+                    <button class="tab-btn" data-tab="abilities">✨ Способности</button>
+                    <button class="tab-btn" data-tab="inventory">🎒 Инвентарь</button>
+                    <button class="tab-btn" data-tab="achievements">🏆 Достижения</button>
+                    <button class="tab-btn" data-tab="settings">⚙️ Настройки</button>
+                </nav>
+            </aside>
+
+            <!-- Основная область контента -->
+            <main class="main-content-area">
+                <div class="tabs-content">
+                    <!-- Фокус -->
+                    <div id="tab-focus" class="tab-content active">
+                        <h2>🗺️ Фокус</h2>
+                        <p>Здесь будут ваши главные цели и майндакрта.</p>
+                        <p><em>Страница в разработке</em></p>
+                    </div>
+
+                    <!-- В игре -->
+                    <div id="tab-game" class="tab-content">
+                        <h2>⚔️ В игре</h2>
+                        <p>Текущие задания и события.</p>
+                        <p><em>Страница в разработке</em></p>
+                    </div>
+
+                    <!-- Журнал (задачи) -->
+                    <div id="tab-tasks" class="tab-content">
+                        <h2>📋 Журнал</h2>
+                        <p>Список ваших задач.</p>
+                        <div id="tasks-list">Загрузка...</div>
+                        <p><em>Страница в разработке</em></p>
+                    </div>
+
+                    <!-- Навыки (персона) -->
+                    <div id="tab-character" class="tab-content">
+                        <h2>🧙 Навыки</h2>
+                        <div class="level-block">
+                            <span class="level-label">Уровень</span>
+                            <span class="level-number" id="playerLevel">1</span>
+                            <span class="level-xp" id="playerXp">Опыт: 0 / 100</span>
+                        </div>
+                        <div class="stats-grid" id="statsContainer">
+                            <!-- заполняется JS -->
+                        </div>
+                        <div class="skills-title">📜 Навыки</div>
+                        <div id="skillsContainer">
+                            <!-- заполняется JS -->
+                        </div>
+                        <button class="btn-level-up" id="levelUpBtn">⬆ Повысить навык</button>
+                    </div>
+
+                    <!-- Способности -->
+                    <div id="tab-abilities" class="tab-content">
+                        <h2>✨ Способности</h2>
+                        <p>Список изученных способностей.</p>
+                        <p><em>Страница в разработке</em></p>
+                    </div>
+
+                    <!-- Инвентарь -->
+                    <div id="tab-inventory" class="tab-content">
+                        <h2>🎒 Инвентарь</h2>
+                        <p>Ваши предметы и снаряжение.</p>
+                        <p><em>Страница в разработке</em></p>
+                    </div>
+
+                    <!-- Достижения -->
+                    <div id="tab-achievements" class="tab-content">
+                        <h2>🏆 Достижения</h2>
+                        <p>Ваши достижения.</p>
+                        <p><em>Страница в разработке</em></p>
+                    </div>
+
+                    <!-- Настройки -->
+                    <div id="tab-settings" class="tab-content">
+                        <h2>⚙️ Настройки</h2>
+                        <p>Настройки приложения.</p>
+                        <p><em>Страница в разработке</em></p>
+                    </div>
+                </div>
             </div>
-            <!-- Вкладка "Задачи" -->
-            <div id="tab-tasks" class="tab-content">
-            <h2>Задачи</h2>
-            <div id="tasksList">Список задач (загружается...)</div>
-            </div>
-            <!-- Вкладка "Персона" -->
-            <div id="tab-character" class="tab-content">
-            <h2>Персона</h2>
-            <!-- ... весь блок персонажа ... -->
-            </div>
-            <!-- Вкладка "Персона" -->
-            <div id="tab-character" class="tab-content">
-                <h2>Персона</h2>
-                <!-- ... весь блок персонажа ... -->
-            </div>
-            <!-- Остальные вкладки -->
-        </div>
+        </main>
     </div>
+    
 <script type="module" src="js/auth.js"></script>
+<script type="module" src="js/tabs.js"></script>
 </body>
 </html>
