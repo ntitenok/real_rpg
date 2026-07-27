@@ -37,10 +37,55 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>⚔️ RPG Менеджер задач</h1>
-        <p>Сервер запущен, фронтенд раздаётся через Flask!</p>
-        <p class="status">Статус: <span>✅ работает</span></p>
+    <div id="auth-container">
+        <h2>Вход / Регистрация</h2>
+        <input type="text" id="auth-username" placeholder="Логин">
+        <input type="password" id="auth-password" placeholder="Пароль">
+        <button id="login-btn">Войти</button>
+        <button id="register-btn">Зарегистрироваться</button>
+        <div id="auth-message"></div>
     </div>
+
+    <div id="profile-container" style="display: none;">
+        <span id="username-display"></span>
+        <button id="logout-btn">Выйти</button>
+    </div>
+
+    <div id="main-content" style="display: none;">
+        <!-- Здесь остаётся твой существующий интерфейс -->
+        <nav class="tabs-nav">
+            <button class="tab-btn active" data-tab="focus">Фокус</button>
+            <button class="tab-btn" data-tab="tasks">Задачи</button>
+            <button class="tab-btn" data-tab="character">Персона</button>
+            <button class="tab-btn" data-tab="skills">Умения</button>
+            <button class="tab-btn" data-tab="achievements">Достижения</button>
+            <button class="tab-btn" data-tab="settings">Настройки</button>
+            </nav>
+        <!-- Контейнер для содержимого вкладок -->
+        <div class="tabs-content">
+            <!-- Вкладка "Фокус" -->
+            <div id="tab-focus" class="tab-content active">
+            <h2>Фокус</h2>
+            <p>Здесь будут ваши главные цели и майндакрта.</p>
+            </div>
+            <!-- Вкладка "Задачи" -->
+            <div id="tab-tasks" class="tab-content">
+            <h2>Задачи</h2>
+            <div id="tasksList">Список задач (загружается...)</div>
+            </div>
+            <!-- Вкладка "Персона" -->
+            <div id="tab-character" class="tab-content">
+            <h2>Персона</h2>
+            <!-- ... весь блок персонажа ... -->
+            </div>
+            <!-- Вкладка "Персона" -->
+            <div id="tab-character" class="tab-content">
+                <h2>Персона</h2>
+                <!-- ... весь блок персонажа ... -->
+            </div>
+            <!-- Остальные вкладки -->
+        </div>
+    </div>
+<script type="module" src="js/auth.js"></script>
 </body>
 </html>
