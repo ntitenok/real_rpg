@@ -1,13 +1,13 @@
 // tabs.js — переключение вкладок
 
 export function initTabs() {
-    const buttons = document.querySelectorAll('.tab-btn');
+    const menuItems = document.querySelectorAll('.menu-item');
     const contents = document.querySelectorAll('.tab-content');
 
-    buttons.forEach(btn => {
+    menuItems.forEach(btn => {
         btn.addEventListener('click', () => {
             // Убираем активные классы у всех кнопок и контента
-            buttons.forEach(b => b.classList.remove('active'));
+            menuItems.forEach(b => b.classList.remove('active'));
             contents.forEach(c => c.classList.remove('active'));
 
             // Активируем текущую
