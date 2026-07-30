@@ -1,4 +1,5 @@
 import { initTabs } from './tabs.js';
+import { renderTab } from './loader.js';
 
 // Получаем элементы DOM
 const authContainer = document.getElementById('auth-container');
@@ -27,6 +28,14 @@ function showProfile(username) {
     mainContent.style.display = 'block';         // показываем основной интерфейс
     usernameDisplay.textContent = username;
     initTabs();
+    // Дополнительно загружаем активную вкладку, если она ещё не загружена
+    const activeTab = document.querySelector('.tab-content.active');
+    if (activeTab) {
+        const tabId = activeTab.id.replace('tab-', '');
+        if (!activeTab.dataset.loaded) {
+            renderTab(tabId);
+        }
+    }
 }
 
 // Функция показа авторизации (выход)
