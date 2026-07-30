@@ -1,7 +1,114 @@
-<div class="panel-head">
-  <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="#e8d5a0" stroke-width="1.5">
-      <path d="M6 18L18 6M14 4l6 6M4 20l3-1 1-3" />
-    </svg></div>
-  <h2>⚔️ В игре</h2>
+<!-- ===== ВКЛАДКА "В ИГРЕ" ===== -->
+<div class="panel">
+  <div class="panel-head">
+    <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="#e8d5a0" stroke-width="1.5">
+        <path d="M6 18L18 6M14 4l6 6M4 20l3-1 1-3" />
+      </svg></div>
+    <h2>В игре</h2>
+  </div>
+
+  <div class="game-stack">
+
+    <!-- РЯД 1: Параметры + Противник -->
+    <div class="row-2col">
+      <div class="sub-block" id="player-stats">
+        <div class="sub-title"><svg viewBox="0 0 24 24" fill="none" stroke="#c9a866" stroke-width="1.6">
+            <path d="M12 2l7 4v6c0 5-3 8-7 10-4-2-7-5-7-10V6z" />
+          </svg>Параметры</div>
+        <!-- Заполняется JS -->
+      </div>
+
+      <div class="sub-block" id="enemy-block">
+        <div class="sub-title"><svg viewBox="0 0 24 24" fill="none" stroke="#c9a866" stroke-width="1.6">
+            <path d="M12 2c-2 3-5 3-5 7 0 3 2 5 5 5s5-2 5-5c0-4-3-4-5-7z" />
+            <path d="M8 18h8l-1 3H9z" />
+          </svg>Противник</div>
+        <!-- Заполняется JS -->
+      </div>
+    </div>
+
+    <!-- РЯД 2: Быстрые способности -->
+    <div class="sub-block" id="abilities-block">
+      <div class="sub-title"><svg viewBox="0 0 24 24" fill="none" stroke="#c9a866" stroke-width="1.6">
+          <path d="M12 2l1.5 4 4 .5-3 3 .8 4-3.3-2-3.3 2 .8-4-3-3 4-.5z" />
+        </svg>Быстрые способности</div>
+      <div class="abilities-row" id="abilities-list">
+        <!-- Заполняется JS -->
+      </div>
+    </div>
+
+    <!-- РЯД 3: Активные задачи -->
+    <div class="sub-block">
+      <div class="sub-title"><svg viewBox="0 0 24 24" fill="none" stroke="#c9a866" stroke-width="1.6">
+          <rect x="5" y="3" width="14" height="18" rx="1.5" />
+          <path d="M9 8h6M9 12h6M9 16h4" />
+        </svg>Активные задачи</div>
+      <div id="active-tasks-list">
+        <!-- Заполняется JS -->
+      </div>
+    </div>
+
+    <!-- РЯД 4: Активная цель -->
+    <div class="sub-block" id="active-goal-block">
+      <div class="sub-title"><svg viewBox="0 0 24 24" fill="none" stroke="#c9a866" stroke-width="1.6">
+          <circle cx="12" cy="12" r="8" />
+          <circle cx="12" cy="12" r="4" />
+          <circle cx="12" cy="12" r="0.6" fill="#c9a866" />
+        </svg>Активная цель</div>
+      <!-- Заполняется JS -->
+    </div>
+
+    <!-- РЯД 5: Добавление задачи / цели -->
+    <div class="sub-block">
+      <div class="sub-title"><svg viewBox="0 0 24 24" fill="none" stroke="#c9a866" stroke-width="1.6">
+          <path d="M12 5v14M5 12h14" />
+        </svg>Добавить задачу или цель</div>
+      <div class="add-form" id="add-form">
+        <div class="form-row">
+          <div><label>Тип</label>
+            <select id="add-type">
+              <option value="task">Задача</option>
+              <option value="goal">Цель</option>
+            </select>
+          </div>
+        </div>
+        <div><label>Название</label><input type="text" id="add-title" placeholder="Например: Настроить CI/CD"></div>
+        <div><label>Описание</label><textarea id="add-desc" placeholder="Необязательно"></textarea></div>
+
+        <!-- Поля для задачи (скрываются при выборе "Цель") -->
+        <div id="task-fields">
+          <div>
+            <label>Навыки (прокрутка, по алфавиту)</label>
+            <div class="skills-scroll" id="skills-checklist">
+              <!-- Заполняется JS из списка навыков пользователя -->
+            </div>
+          </div>
+          <div><label>Цель</label>
+            <select id="add-goal">
+              <option value="">Без привязки</option>
+              <!-- Заполняется JS -->
+            </select>
+          </div>
+          <div class="slider-row">
+            <div class="slider-top"><span>Сопротивление</span><span id="resistance-val">50</span></div>
+            <input type="range" min="0" max="100" value="50" id="add-resistance">
+          </div>
+          <div class="slider-row">
+            <div class="slider-top"><span>Важность</span><span id="importance-val">50</span></div>
+            <input type="range" min="0" max="100" value="50" id="add-importance">
+          </div>
+          <div class="slider-row">
+            <div class="slider-top"><span>Срочность</span><span id="urgency-val">50</span></div>
+            <input type="range" min="0" max="100" value="50" id="add-urgency">
+          </div>
+          <div><label>Плановое время (ч:мин)</label><input type="text" id="add-planned" placeholder="1:30"></div>
+        </div>
+
+        <button class="btn-add" id="add-btn"><svg viewBox="0 0 24 24" fill="none" stroke="#f0dfa8" stroke-width="1.8">
+            <path d="M12 5v14M5 12h14" />
+          </svg>Добавить</button>
+      </div>
+    </div>
+
+  </div>
 </div>
-<p class="placeholder-text">Страница в разработке</p>
