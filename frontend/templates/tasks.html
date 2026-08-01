@@ -3,6 +3,52 @@
             <rect x="5" y="3" width="14" height="18" rx="1.5" />
             <path d="M9 8h6M9 12h6M9 16h4" />
         </svg></div>
-    <h2>📋 Журнал</h2>
+    <h2>Журнал</h2>
 </div>
-<p class="placeholder-text">Страница в разработке</p>
+
+<div class="journal-stack">
+
+    <!-- Фильтры -->
+    <div class="filter-bar">
+        <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#c9a866" stroke-width="1.8">
+                <circle cx="11" cy="11" r="7" />
+                <path d="M21 21l-4.3-4.3" />
+            </svg>
+            <input type="text" id="journal-search" placeholder="Поиск по задачам…">
+        </div>
+        <select class="filter-select" id="journal-status-filter">
+            <option value="all">Все задачи</option>
+            <option value="done">Выполненные</option>
+            <option value="progress">В процессе</option>
+            <option value="pending">Ожидают</option>
+        </select>
+        <div class="tab-toggle" id="journal-mode-toggle">
+            <div class="tab-toggle-item active" data-mode="goals">По целям</div>
+            <div class="tab-toggle-item" data-mode="az">Все задачи (А-Я)</div>
+        </div>
+    </div>
+
+    <!-- Режим: группировка по целям -->
+    <div id="journal-goals-mode">
+        <div class="sub-title"><svg viewBox="0 0 24 24" fill="none" stroke="#c9a866" stroke-width="1.6">
+                <circle cx="12" cy="12" r="8" />
+                <circle cx="12" cy="12" r="4" />
+                <circle cx="12" cy="12" r="0.6" fill="#c9a866" />
+            </svg>По целям</div>
+        <div id="journal-goals-list" style="display:flex; flex-direction:column; gap:14px;">
+            <!-- Заполняется JS -->
+        </div>
+    </div>
+
+    <!-- Режим: алфавитный список -->
+    <div id="journal-az-mode" style="display:none;">
+        <div class="sub-title"><svg viewBox="0 0 24 24" fill="none" stroke="#c9a866" stroke-width="1.6">
+                <path d="M4 6h16M4 12h10M4 18h7" />
+            </svg>Все задачи (А-Я)</div>
+        <div class="az-list" id="journal-az-list">
+            <!-- Заполняется JS -->
+        </div>
+    </div>
+
+</div>
