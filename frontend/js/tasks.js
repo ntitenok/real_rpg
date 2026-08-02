@@ -1,8 +1,9 @@
 // tasks.js — логика вкладки «Журнал»
 
 import { getCurrentUserId } from './auth.js';
+import { getGoals } from './api.js';
 
-// ===== МОК-ДАННЫЕ =====
+let journalGoals = [];
 let journalTasks = [
     {
         id: 1,
@@ -25,22 +26,6 @@ let journalTasks = [
         skills: ['Одноручное оружие']
     }
 ];
-
-let journalGoals = [];
-
-// ===== API для целей =====
-async function fetchGoalsForJournal() {
-    const userId = getCurrentUserId();
-    if (!userId) return [];
-    try {
-        const res = await fetch(`/api/goals?user_id=${userId}`);
-        if (!res.ok) throw new Error('Ошибка загрузки целей');
-        return await res.json();
-    } catch (e) {
-        console.error(e);
-        return [];
-    }
-}
 
 // ===== СОСТОЯНИЕ =====
 let journalState = {
@@ -231,10 +216,17 @@ function renderJournal() {
 // ===== ИНИЦИАЛИЗАЦИЯ =====
 
 export async function initJournal() {
-    const loadedGoals = await fetchGoalsForJournal();
-    if (loadedGoals.length > 0) {
+    const userId = getCurrentUserId();
+    if (!userId) {
+        console.warn('Пользователь не авторизован');
+        return;
+    }
+
+    try {
+        const loadedGoals = await getGoals(userId);
         journalGoals = loadedGoals;
-    } else {
+    } catch (e) {
+        console.error('Ошибка загрузки целей:', e);
         journalGoals = [];
     }
 
@@ -268,14 +260,12 @@ export async function initJournal() {
     renderJournal();
 }
 
-// Подписка на событие активации вкладки — срабатывает при каждом переключении
 document.addEventListener('tabActivated', (e) => {
     if (e.detail.tabId === 'tasks') {
-        initJournal(); // всегда обновляем данные при переходе на Журнал
+        initJournal();
     }
 });
 
-// Если вкладка уже активна при старте
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
     const tasksTab = document.getElementById('tab-tasks');
     if (tasksTab && tasksTab.classList.contains('active')) {

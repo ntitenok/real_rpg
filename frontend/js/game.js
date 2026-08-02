@@ -1,8 +1,9 @@
 // game.js — логика экрана «В игре»
 
 import { getCurrentUserId } from './auth.js';
+import { getGoals, createGoal } from './api.js';
 
-// ===== МОК-ДАННЫЕ (будут заменены реальными) =====
+// ===== МОК-ДАННЫЕ =====
 let playerStats = {
     health: { current: 82, max: 100 },
     energy: { current: 54, max: 70 },
@@ -52,38 +53,6 @@ let tasks = [
 let goals = [];
 let allSkills = ['Гибкость мышления', 'Красноречие', 'Магия', 'Медитация', 'Одноручное оружие', 'Планирование', 'Скрытность', 'Стойкость'];
 const timerIntervals = {};
-
-// ===== API для целей =====
-async function fetchGoals() {
-    const userId = getCurrentUserId();
-    if (!userId) return [];
-    try {
-        const res = await fetch(`/api/goals?user_id=${userId}`);
-        if (!res.ok) throw new Error('Ошибка загрузки целей');
-        return await res.json();
-    } catch (e) {
-        console.error(e);
-        return [];
-    }
-}
-
-async function createGoalOnServer(title, description) {
-    const userId = getCurrentUserId();
-    if (!userId) return null;
-    try {
-        const res = await fetch('/api/goals', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: userId, title, description })
-        });
-        if (!res.ok) throw new Error('Ошибка создания цели');
-        return await res.json();
-    } catch (e) {
-        console.error(e);
-        showToast('Ошибка при создании цели');
-        return null;
-    }
-}
 
 // ===== ОТРИСОВКА =====
 
@@ -342,14 +311,24 @@ async function addItem() {
     }
 
     if (type === 'goal') {
-        const result = await createGoalOnServer(title, desc);
-        if (result) {
-            showToast(`Цель "${title}" добавлена`);
-            document.getElementById('add-title').value = '';
-            document.getElementById('add-desc').value = '';
-            const updatedGoals = await fetchGoals();
-            goals = updatedGoals;
-            renderAll();
+        const userId = getCurrentUserId();
+        if (!userId) {
+            showToast('Пользователь не авторизован');
+            return;
+        }
+        try {
+            const result = await createGoal(userId, title, desc);
+            if (result) {
+                showToast(`Цель "${title}" добавлена`);
+                document.getElementById('add-title').value = '';
+                document.getElementById('add-desc').value = '';
+                const updatedGoals = await getGoals(userId);
+                goals = updatedGoals;
+                renderAll();
+            }
+        } catch (e) {
+            showToast('Ошибка при создании цели');
+            console.error(e);
         }
         return;
     }
@@ -417,15 +396,21 @@ function showToast(msg) {
 // ===== ИНИЦИАЛИЗАЦИЯ =====
 
 export async function initGame() {
-    const loadedGoals = await fetchGoals();
-    if (loadedGoals.length > 0) {
-        goals = loadedGoals;
-    } else {
-        if (goals.length === 0) {
-            goals = [{ id: 1, title: 'Найти работу QA-инженера', description: '', tasks: [], is_active: false }];
-        }
+    const userId = getCurrentUserId();
+    if (!userId) {
+        console.warn('Пользователь не авторизован');
+        return;
     }
 
+    try {
+        const loadedGoals = await getGoals(userId);
+        goals = loadedGoals;
+    } catch (e) {
+        console.error('Ошибка загрузки целей:', e);
+        goals = [];
+    }
+
+    // Запускаем таймеры для уже активных задач
     tasks.forEach(task => {
         if (task.timer.started && !task.timer.paused && !task.completed) {
             startTimerInterval(task.id);
@@ -451,7 +436,7 @@ export async function initGame() {
     console.log('Game module initialized');
 }
 
-document.addEventListener('tabLoaded', (e) => {
+document.addEventListener('tabActivated', (e) => {
     if (e.detail.tabId === 'game') {
         initGame();
     }
