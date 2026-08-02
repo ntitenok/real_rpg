@@ -1,14 +1,15 @@
 // tasks.js — логика вкладки «Журнал»
 
-// ===== МОК-ДАННЫЕ =====
+import { getCurrentUserId } from './auth.js';
 
-// Пример задач (часть из них ссылается на цели)
+// ===== МОК-ДАННЫЕ (будут заменены реальными) =====
 let journalTasks = [
+    // Примеры задач (позже будут с сервера)
     {
         id: 1,
         title: 'Обновить резюме',
         description: '',
-        status: 'done',        // done, progress, pending
+        status: 'done',
         xp: 40,
         time: null,
         goalId: 'goal-1',
@@ -20,61 +21,31 @@ let journalTasks = [
         description: 'Selene + pytest',
         status: 'progress',
         xp: 0,
-        time: 5025, // секунды
+        time: 5025,
         goalId: 'goal-1',
-        skills: ['Одноручное оружие']
-    },
-    {
-        id: 3,
-        title: 'Пройти техническое собеседование',
-        description: '',
-        status: 'pending',
-        xp: 0,
-        time: null,
-        goalId: 'goal-1',
-        skills: ['Магия']
-    },
-    {
-        id: 4,
-        title: 'Пройти урок: SQL-джойны',
-        description: '',
-        status: 'done',
-        xp: 25,
-        time: null,
-        goalId: 'goal-2',
-        skills: ['Магия']
-    },
-    {
-        id: 5,
-        title: 'Настроить CI/CD в Jenkins',
-        description: '',
-        status: 'pending',
-        xp: 0,
-        time: null,
-        goalId: 'goal-2',
-        skills: ['Одноручное оружие']
-    },
-    {
-        id: 6,
-        title: 'Прочитать статью про DarkAgro-баг',
-        description: '',
-        status: 'done',
-        xp: 10,
-        time: null,
-        goalId: null,
         skills: ['Одноручное оружие']
     }
 ];
 
-// Цели
-let journalGoals = [
-    { id: 'goal-1', title: 'Найти работу QA-инженера', totalTasks: 20 },
-    { id: 'goal-2', title: 'Пройти курс автоматизации тестирования', totalTasks: 19 }
-];
+let journalGoals = [];
+
+// ===== API для целей =====
+async function fetchGoalsForJournal() {
+    const userId = getCurrentUserId();
+    if (!userId) return [];
+    try {
+        const res = await fetch(`/api/goals?user_id=${userId}`);
+        if (!res.ok) throw new Error('Ошибка загрузки целей');
+        return await res.json();
+    } catch (e) {
+        console.error(e);
+        return [];
+    }
+}
 
 // ===== СОСТОЯНИЕ =====
 let journalState = {
-    mode: 'goals', // 'goals' | 'az'
+    mode: 'goals',
     search: '',
     statusFilter: 'all'
 };
@@ -103,8 +74,6 @@ function escapeHtml(text) {
     return String(text).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 }
 
-// ===== ФИЛЬТРАЦИЯ =====
-
 function filterTasks(tasks) {
     let filtered = tasks;
     if (journalState.search) {
@@ -117,15 +86,11 @@ function filterTasks(tasks) {
     return filtered;
 }
 
-// ===== ОТРИСОВКА РЕЖИМА "ПО ЦЕЛЯМ" =====
-
 function renderGoalsMode(tasks) {
     const container = document.getElementById('journal-goals-list');
     if (!container) return;
 
     const filtered = filterTasks(tasks);
-
-    // Группируем по целям
     const goalsMap = {};
     const noGoalTasks = [];
 
@@ -140,66 +105,68 @@ function renderGoalsMode(tasks) {
 
     let html = '';
 
-    // Группы по целям
     journalGoals.forEach(goal => {
         const goalTasks = goalsMap[goal.id] || [];
         if (goalTasks.length === 0) return;
 
         const doneCount = goalTasks.filter(t => t.status === 'done').length;
-        const progress = goal.totalTasks > 0 ? Math.min(100, (doneCount / goal.totalTasks) * 100) : 0;
+        const total = goal.total_tasks || 0;
+        const progress = total > 0 ? Math.min(100, (doneCount / total) * 100) : 0;
 
         html += `
-      <div class="goal-group">
-        <div class="goal-header">
-          <div class="goal-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#e8d5a0" stroke-width="1.5"><path d="M12 2l2.5 5.5L20 9l-4.2 4 1 6.2L12 16l-4.8 3.2 1-6.2L4 9l5.5-1.5z"/></svg></div>
-          <div class="goal-info">
-            <div class="goal-name">${escapeHtml(goal.title)}</div>
-            <div class="goal-progress-track"><div class="goal-progress-fill" style="width:${progress}%"></div></div>
-          </div>
-          <div class="goal-count">${doneCount} / ${goal.totalTasks}</div>
-        </div>
-        <div class="goal-tasks">
-          ${goalTasks.map(task => `
-            <div class="jtask-row ${task.status}">
-              <div class="status-icon">${getStatusIcon(task.status)}</div>
-              <div class="jtask-name">${escapeHtml(task.title)}</div>
-              <div class="jtask-tags">
-                ${task.skills.map(s => `<div class="jtask-tag"><svg viewBox="0 0 24 24" fill="none" stroke="#a89a80" stroke-width="1.8"><path d="M6 18L18 6M14 4l6 6"/></svg>${escapeHtml(s)}</div>`).join('')}
-              </div>
-              <div class="jtask-xp">${task.status === 'done' ? `+${task.xp} XP` : (task.time ? formatTime(task.time) : '—')}</div>
+            <div class="goal-group">
+                <div class="goal-header">
+                    <div class="goal-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#e8d5a0" stroke-width="1.5"><path d="M12 2l2.5 5.5L20 9l-4.2 4 1 6.2L12 16l-4.8 3.2 1-6.2L4 9l5.5-1.5z"/></svg></div>
+                    <div class="goal-info">
+                        <div class="goal-name">
+                            ${escapeHtml(goal.title)}
+                            ${goal.is_active ? '' : '<span style="color:#877a63; font-size:12px;"> (неактивна)</span>'}
+                        </div>
+                        <div class="goal-progress-track"><div class="goal-progress-fill" style="width:${progress}%"></div></div>
+                    </div>
+                    <div class="goal-count">${doneCount} / ${total}</div>
+                </div>
+                <div class="goal-tasks">
+                    ${goalTasks.map(task => `
+                        <div class="jtask-row ${task.status}">
+                            <div class="status-icon">${getStatusIcon(task.status)}</div>
+                            <div class="jtask-name">${escapeHtml(task.title)}</div>
+                            <div class="jtask-tags">
+                                ${task.skills.map(s => `<div class="jtask-tag"><svg viewBox="0 0 24 24" fill="none" stroke="#a89a80" stroke-width="1.8"><path d="M6 18L18 6M14 4l6 6"/></svg>${escapeHtml(s)}</div>`).join('')}
+                            </div>
+                            <div class="jtask-xp">${task.status === 'done' ? `+${task.xp} XP` : (task.time ? formatTime(task.time) : '—')}</div>
+                        </div>
+                    `).join('')}
+                </div>
             </div>
-          `).join('')}
-        </div>
-      </div>
-    `;
+        `;
     });
 
-    // Блок "Без цели"
     if (noGoalTasks.length > 0) {
         html += `
-      <div class="goal-group">
-        <div class="goal-header">
-          <div class="goal-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#8a7a63" stroke-width="1.5"><path d="M4 6h16M4 12h16M4 18h16"/></svg></div>
-          <div class="goal-info">
-            <div class="goal-name" style="color:#a89a80;">Без цели</div>
-            <div class="goal-progress-track"><div class="goal-progress-fill" style="width:100%; background:rgba(160,150,130,0.3);"></div></div>
-          </div>
-          <div class="goal-count">${noGoalTasks.length}</div>
-        </div>
-        <div class="goal-tasks">
-          ${noGoalTasks.map(task => `
-            <div class="jtask-row ${task.status}">
-              <div class="status-icon">${getStatusIcon(task.status)}</div>
-              <div class="jtask-name">${escapeHtml(task.title)}</div>
-              <div class="jtask-tags">
-                ${task.skills.map(s => `<div class="jtask-tag"><svg viewBox="0 0 24 24" fill="none" stroke="#a89a80" stroke-width="1.8"><path d="M6 18L18 6M14 4l6 6"/></svg>${escapeHtml(s)}</div>`).join('')}
-              </div>
-              <div class="jtask-xp">${task.status === 'done' ? `+${task.xp} XP` : (task.time ? formatTime(task.time) : '—')}</div>
+            <div class="goal-group">
+                <div class="goal-header">
+                    <div class="goal-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#8a7a63" stroke-width="1.5"><path d="M4 6h16M4 12h16M4 18h16"/></svg></div>
+                    <div class="goal-info">
+                        <div class="goal-name" style="color:#a89a80;">Без цели</div>
+                        <div class="goal-progress-track"><div class="goal-progress-fill" style="width:100%; background:rgba(160,150,130,0.3);"></div></div>
+                    </div>
+                    <div class="goal-count">${noGoalTasks.length}</div>
+                </div>
+                <div class="goal-tasks">
+                    ${noGoalTasks.map(task => `
+                        <div class="jtask-row ${task.status}">
+                            <div class="status-icon">${getStatusIcon(task.status)}</div>
+                            <div class="jtask-name">${escapeHtml(task.title)}</div>
+                            <div class="jtask-tags">
+                                ${task.skills.map(s => `<div class="jtask-tag"><svg viewBox="0 0 24 24" fill="none" stroke="#a89a80" stroke-width="1.8"><path d="M6 18L18 6M14 4l6 6"/></svg>${escapeHtml(s)}</div>`).join('')}
+                            </div>
+                            <div class="jtask-xp">${task.status === 'done' ? `+${task.xp} XP` : (task.time ? formatTime(task.time) : '—')}</div>
+                        </div>
+                    `).join('')}
+                </div>
             </div>
-          `).join('')}
-        </div>
-      </div>
-    `;
+        `;
     }
 
     if (!html) {
@@ -209,18 +176,13 @@ function renderGoalsMode(tasks) {
     container.innerHTML = html;
 }
 
-// ===== ОТРИСОВКА РЕЖИМА "АЛФАВИТНЫЙ СПИСОК" =====
-
 function renderAZMode(tasks) {
     const container = document.getElementById('journal-az-list');
     if (!container) return;
 
     const filtered = filterTasks(tasks);
-
-    // Сортировка по названию
     const sorted = [...filtered].sort((a, b) => a.title.localeCompare(b.title, 'ru'));
 
-    // Группировка по первой букве
     const groups = {};
     sorted.forEach(task => {
         const letter = task.title.charAt(0).toUpperCase();
@@ -229,7 +191,6 @@ function renderAZMode(tasks) {
     });
 
     const letters = Object.keys(groups).sort();
-
     if (letters.length === 0) {
         container.innerHTML = `<p class="empty" style="padding:20px 0; color:#877a63;">Нет задач, соответствующих фильтрам</p>`;
         return;
@@ -242,22 +203,20 @@ function renderAZMode(tasks) {
             const goal = journalGoals.find(g => g.id === task.goalId);
             const goalLabel = goal ? goal.title : 'Без цели';
             html += `
-        <div class="az-row ${task.status}">
-          <div class="status-icon">${getStatusIcon(task.status)}</div>
-          <div class="jtask-name">${escapeHtml(task.title)}</div>
-          <div class="az-goal-ref"><svg viewBox="0 0 24 24" fill="none" stroke="#877a63" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg>${escapeHtml(goalLabel)}</div>
-        </div>
-      `;
+                <div class="az-row ${task.status}">
+                    <div class="status-icon">${getStatusIcon(task.status)}</div>
+                    <div class="jtask-name">${escapeHtml(task.title)}</div>
+                    <div class="az-goal-ref"><svg viewBox="0 0 24 24" fill="none" stroke="#877a63" stroke-width="2"><circle cx="12" cy="12" r="8"/></svg>${escapeHtml(goalLabel)}</div>
+                </div>
+            `;
         });
     });
 
     container.innerHTML = html;
 }
 
-// ===== ОБЩАЯ ОТРИСОВКА =====
-
 function renderJournal() {
-    const tasks = journalTasks; // можно позже заменить на данные из бэка
+    const tasks = journalTasks;
     if (journalState.mode === 'goals') {
         document.getElementById('journal-goals-mode').style.display = 'block';
         document.getElementById('journal-az-mode').style.display = 'none';
@@ -271,7 +230,15 @@ function renderJournal() {
 
 // ===== ИНИЦИАЛИЗАЦИЯ =====
 
-export function initJournal() {
+export async function initJournal() {
+    // Загружаем цели с сервера
+    const loadedGoals = await fetchGoalsForJournal();
+    if (loadedGoals.length > 0) {
+        journalGoals = loadedGoals;
+    }
+
+    // В будущем задачи тоже будут с сервера, пока оставляем мок
+
     // Обработчики переключения режимов
     const toggleItems = document.querySelectorAll('#journal-mode-toggle .tab-toggle-item');
     toggleItems.forEach(item => {
@@ -283,7 +250,6 @@ export function initJournal() {
         });
     });
 
-    // Поиск
     const searchInput = document.getElementById('journal-search');
     if (searchInput) {
         searchInput.addEventListener('input', function () {
@@ -292,7 +258,6 @@ export function initJournal() {
         });
     }
 
-    // Фильтр статуса
     const statusFilter = document.getElementById('journal-status-filter');
     if (statusFilter) {
         statusFilter.addEventListener('change', function () {
@@ -301,7 +266,6 @@ export function initJournal() {
         });
     }
 
-    // Первичный рендеринг
     renderJournal();
 }
 
@@ -312,7 +276,6 @@ document.addEventListener('tabLoaded', (e) => {
     }
 });
 
-// Если вкладка уже загружена при старте (например, активна по умолчанию)
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
     const tasksTab = document.getElementById('tab-tasks');
     if (tasksTab && tasksTab.dataset.loaded === 'true') {

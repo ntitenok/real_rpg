@@ -44,6 +44,7 @@ class Goal(db.Model):
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=False)
     status = db.Column(
         db.String(20), default="active"
     )  # active, done — позже пригодится

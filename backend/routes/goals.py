@@ -39,6 +39,7 @@ def get_goals():
                 "description": g.description,
                 "created_at": g.created_at.isoformat(),
                 "status": g.status,
+                "is_active": g.is_active,
             }
             for g in goals
         ]
