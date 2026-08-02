@@ -2,9 +2,8 @@
 
 import { getCurrentUserId } from './auth.js';
 
-// ===== МОК-ДАННЫЕ (будут заменены реальными) =====
+// ===== МОК-ДАННЫЕ =====
 let journalTasks = [
-    // Примеры задач (позже будут с сервера)
     {
         id: 1,
         title: 'Обновить резюме',
@@ -107,8 +106,6 @@ function renderGoalsMode(tasks) {
 
     journalGoals.forEach(goal => {
         const goalTasks = goalsMap[goal.id] || [];
-        if (goalTasks.length === 0) return;
-
         const doneCount = goalTasks.filter(t => t.status === 'done').length;
         const total = goal.total_tasks || 0;
         const progress = total > 0 ? Math.min(100, (doneCount / total) * 100) : 0;
@@ -120,6 +117,7 @@ function renderGoalsMode(tasks) {
                     <div class="goal-info">
                         <div class="goal-name">
                             ${escapeHtml(goal.title)}
+                            ${goal.description ? `<div style="font-size:13px; color:#877a63; font-weight:normal; margin-top:4px;">${escapeHtml(goal.description)}</div>` : ''}
                             ${goal.is_active ? '' : '<span style="color:#877a63; font-size:12px;"> (неактивна)</span>'}
                         </div>
                         <div class="goal-progress-track"><div class="goal-progress-fill" style="width:${progress}%"></div></div>
@@ -127,16 +125,18 @@ function renderGoalsMode(tasks) {
                     <div class="goal-count">${doneCount} / ${total}</div>
                 </div>
                 <div class="goal-tasks">
-                    ${goalTasks.map(task => `
-                        <div class="jtask-row ${task.status}">
-                            <div class="status-icon">${getStatusIcon(task.status)}</div>
-                            <div class="jtask-name">${escapeHtml(task.title)}</div>
-                            <div class="jtask-tags">
-                                ${task.skills.map(s => `<div class="jtask-tag"><svg viewBox="0 0 24 24" fill="none" stroke="#a89a80" stroke-width="1.8"><path d="M6 18L18 6M14 4l6 6"/></svg>${escapeHtml(s)}</div>`).join('')}
+                    ${goalTasks.length === 0
+                ? '<div class="jtask-row" style="padding:9px 8px; color:#877a63; font-style:italic;">Нет задач</div>'
+                : goalTasks.map(task => `
+                            <div class="jtask-row ${task.status}">
+                                <div class="status-icon">${getStatusIcon(task.status)}</div>
+                                <div class="jtask-name">${escapeHtml(task.title)}</div>
+                                <div class="jtask-tags">
+                                    ${task.skills.map(s => `<div class="jtask-tag"><svg viewBox="0 0 24 24" fill="none" stroke="#a89a80" stroke-width="1.8"><path d="M6 18L18 6M14 4l6 6"/></svg>${escapeHtml(s)}</div>`).join('')}
+                                </div>
+                                <div class="jtask-xp">${task.status === 'done' ? `+${task.xp} XP` : (task.time ? formatTime(task.time) : '—')}</div>
                             </div>
-                            <div class="jtask-xp">${task.status === 'done' ? `+${task.xp} XP` : (task.time ? formatTime(task.time) : '—')}</div>
-                        </div>
-                    `).join('')}
+                        `).join('')}
                 </div>
             </div>
         `;
@@ -231,13 +231,12 @@ function renderJournal() {
 // ===== ИНИЦИАЛИЗАЦИЯ =====
 
 export async function initJournal() {
-    // Загружаем цели с сервера
     const loadedGoals = await fetchGoalsForJournal();
     if (loadedGoals.length > 0) {
         journalGoals = loadedGoals;
+    } else {
+        journalGoals = [];
     }
-
-    // В будущем задачи тоже будут с сервера, пока оставляем мок
 
     // Обработчики переключения режимов
     const toggleItems = document.querySelectorAll('#journal-mode-toggle .tab-toggle-item');
@@ -269,16 +268,17 @@ export async function initJournal() {
     renderJournal();
 }
 
-// Подписка на событие загрузки вкладки
-document.addEventListener('tabLoaded', (e) => {
+// Подписка на событие активации вкладки — срабатывает при каждом переключении
+document.addEventListener('tabActivated', (e) => {
     if (e.detail.tabId === 'tasks') {
-        initJournal();
+        initJournal(); // всегда обновляем данные при переходе на Журнал
     }
 });
 
+// Если вкладка уже активна при старте
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
     const tasksTab = document.getElementById('tab-tasks');
-    if (tasksTab && tasksTab.dataset.loaded === 'true') {
+    if (tasksTab && tasksTab.classList.contains('active')) {
         initJournal();
     }
 }
