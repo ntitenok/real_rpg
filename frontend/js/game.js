@@ -1,8 +1,9 @@
 // game.js — логика экрана «В игре»
 
-// ===== МОК-ДАННЫЕ =====
+import { getCurrentUserId } from './auth.js';
+import { getGoals, createGoal } from './api.js';
 
-// Параметры персонажа
+// ===== МОК-ДАННЫЕ =====
 let playerStats = {
     health: { current: 82, max: 100 },
     energy: { current: 54, max: 70 },
@@ -11,14 +12,12 @@ let playerStats = {
     critical_damage: 1.8
 };
 
-// Противник
 let enemy = {
     name: 'Гоблин-разрушитель',
     health: { current: 40, max: 60 },
     damage: 6.2
 };
 
-// Способности
 let abilities = [
     { id: 'tomato', name: 'Помидор', icon: '🍅', status: 'active', cooldown: '17 мин' },
     { id: 'chocolate', name: 'Шоколадка', icon: '🍫', status: 'ready', cooldown: null },
@@ -26,16 +25,15 @@ let abilities = [
     { id: 'command', name: 'Запомнил команду', icon: '📚', status: 'ready', cooldown: '3/5' }
 ];
 
-// Активные задачи
 let tasks = [
     {
         id: 1,
         title: 'Дописать модуль авторизации',
         description: 'Selene + pytest, покрыть негативные сценарии',
         skills: ['Одноручное оружие'],
-        goal: 'Найти работу',
+        goalId: null,
         timer: { elapsed: 5025, started: true, paused: false, startTime: Date.now() - 5025 * 1000 },
-        planned: 7200, // 2 часа
+        planned: 7200,
         complexity: { resistance: 50, importance: 50, urgency: 50 },
         completed: false
     },
@@ -44,7 +42,7 @@ let tasks = [
         title: 'Пройти урок: SQL-джойны',
         description: 'Тема 4, практическая часть',
         skills: ['Магия'],
-        goal: null,
+        goalId: null,
         timer: { elapsed: 0, started: false, paused: false, startTime: null },
         planned: 3600,
         complexity: { resistance: 40, importance: 30, urgency: 20 },
@@ -52,15 +50,8 @@ let tasks = [
     }
 ];
 
-// Цели
-let goals = [
-    { id: 1, title: 'Найти работу QA-инженера', description: '', tasks: [1], completed: false }
-];
-
-// Список всех навыков (для формы)
+let goals = [];
 let allSkills = ['Гибкость мышления', 'Красноречие', 'Магия', 'Медитация', 'Одноручное оружие', 'Планирование', 'Скрытность', 'Стойкость'];
-
-// Таймеры для задач
 const timerIntervals = {};
 
 // ===== ОТРИСОВКА =====
@@ -140,6 +131,7 @@ function renderTasks() {
         const xpTime = Math.round(elapsed * complexityFactor);
         const xpTimeStr = `${Math.floor(xpTime / 3600)}:${String(Math.floor((xpTime % 3600) / 60)).padStart(2, '0')}:${String(xpTime % 60).padStart(2, '0')}`;
 
+        // eslint-disable-next-line no-useless-assignment
         let actionButtons = '';
         if (!task.timer.started) {
             actionButtons = `<button class="task-btn start" data-id="${task.id}" data-action="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l11 7-11 7z"/></svg>Старт</button>`;
@@ -148,7 +140,7 @@ function renderTasks() {
                 <button class="task-btn resume" data-id="${task.id}" data-action="resume"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l11 7-11 7z"/></svg>Продолжить</button>
                 <button class="task-btn stop" data-id="${task.id}" data-action="stop"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12"/></svg>Стоп</button>
             `;
-        } else if (task.timer.started) {
+        } else {
             actionButtons = `
                 <button class="task-btn pause" data-id="${task.id}" data-action="pause"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>Пауза</button>
                 <button class="task-btn stop" data-id="${task.id}" data-action="stop"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12"/></svg>Стоп</button>
@@ -156,7 +148,8 @@ function renderTasks() {
         }
 
         const skillTags = task.skills.map(s => `<span class="task-tag"><svg viewBox="0 0 24 24" fill="none" stroke="#a89a80" stroke-width="1.8"><path d="M6 18L18 6M14 4l6 6"/></svg>${s}</span>`).join('');
-        const goalTag = task.goal ? `<span class="task-tag"><svg viewBox="0 0 24 24" fill="none" stroke="#a89a80" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/></svg>${task.goal}</span>` : '';
+        const goal = goals.find(g => g.id === task.goalId);
+        const goalTag = goal ? `<span class="task-tag"><svg viewBox="0 0 24 24" fill="none" stroke="#a89a80" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/></svg>${goal.title}</span>` : '';
 
         return `
             <div class="task-card">
@@ -182,7 +175,6 @@ function renderTasks() {
         `;
     }).join('');
 
-    // Обработчики кнопок задач
     document.querySelectorAll('.task-btn').forEach(btn => {
         btn.addEventListener('click', function (e) {
             e.stopPropagation();
@@ -196,7 +188,7 @@ function renderTasks() {
 function renderGoal() {
     const block = document.getElementById('active-goal-block');
     if (!block) return;
-    const activeGoal = goals.find(g => !g.completed);
+    const activeGoal = goals.find(g => g.is_active === true);
     if (!activeGoal) {
         block.innerHTML = `
             <div class="sub-title"><svg viewBox="0 0 24 24" fill="none" stroke="#c9a866" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.6" fill="#c9a866"/></svg>Активная цель</div>
@@ -204,8 +196,8 @@ function renderGoal() {
         `;
         return;
     }
-    const total = goals.filter(g => g.id === activeGoal.id)[0]?.tasks?.length || 0;
-    const done = tasks.filter(t => t.goal === activeGoal.title && t.completed).length;
+    const total = activeGoal.total_tasks || 0;
+    const done = activeGoal.completed_tasks || 0;
     const progress = total > 0 ? Math.min(100, (done / total) * 100) : 0;
 
     block.innerHTML = `
@@ -214,6 +206,30 @@ function renderGoal() {
         <div class="goal-progress-track"><div class="goal-progress-fill" style="width:${progress}%"></div></div>
         <div class="goal-label">${done} из ${total} задач выполнено</div>
     `;
+}
+
+async function renderGoalSelect() {
+    const select = document.getElementById('add-goal');
+    if (!select) return;
+    const current = select.value;
+    select.innerHTML = '<option value="">Без привязки</option>';
+    goals.forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = g.id;
+        opt.textContent = g.title;
+        select.appendChild(opt);
+    });
+    if (current) select.value = current;
+}
+
+function renderSkillChecklist() {
+    const container = document.getElementById('skills-checklist');
+    if (!container) return;
+    container.innerHTML = allSkills.map(skill => `
+        <label class="skill-opt-row">
+            <input type="checkbox" value="${skill}"> ${skill}
+        </label>
+    `).join('');
 }
 
 function renderAll() {
@@ -259,7 +275,6 @@ function handleTaskAction(id, action) {
         case 'stop':
             if (timerIntervals[task.id]) clearInterval(timerIntervals[task.id]);
             task.completed = true;
-            // Здесь позже будет начисление XP
             showToast(`Задача "${task.title}" завершена! XP начислен.`);
             renderAll();
             break;
@@ -285,7 +300,7 @@ function startTimerInterval(taskId) {
 
 // ===== ДОБАВЛЕНИЕ ЗАДАЧИ / ЦЕЛИ =====
 
-function addItem() {
+async function addItem() {
     const type = document.getElementById('add-type').value;
     const title = document.getElementById('add-title').value.trim();
     const desc = document.getElementById('add-desc').value.trim();
@@ -296,26 +311,33 @@ function addItem() {
     }
 
     if (type === 'goal') {
-        const newGoal = {
-            id: Date.now(),
-            title: title,
-            description: desc,
-            tasks: [],
-            completed: false
-        };
-        goals.push(newGoal);
-        showToast(`Цель "${title}" добавлена`);
-        document.getElementById('add-title').value = '';
-        document.getElementById('add-desc').value = '';
-        renderAll();
+        const userId = getCurrentUserId();
+        if (!userId) {
+            showToast('Пользователь не авторизован');
+            return;
+        }
+        try {
+            const result = await createGoal(userId, title, desc);
+            if (result) {
+                showToast(`Цель "${title}" добавлена`);
+                document.getElementById('add-title').value = '';
+                document.getElementById('add-desc').value = '';
+                const updatedGoals = await getGoals(userId);
+                goals = updatedGoals;
+                renderAll();
+            }
+        } catch (e) {
+            showToast('Ошибка при создании цели');
+            console.error(e);
+        }
         return;
     }
 
-    // Добавляем задачу
+    // Добавление задачи
     const skillCheckboxes = document.querySelectorAll('#skills-checklist input[type="checkbox"]:checked');
     const skills = Array.from(skillCheckboxes).map(cb => cb.value);
     const goalSelect = document.getElementById('add-goal');
-    const goalTitle = goalSelect.value ? goalSelect.options[goalSelect.selectedIndex]?.text : null;
+    const goalId = goalSelect.value ? parseInt(goalSelect.value) : null;
     const resistance = parseInt(document.getElementById('add-resistance').value);
     const importance = parseInt(document.getElementById('add-importance').value);
     const urgency = parseInt(document.getElementById('add-urgency').value);
@@ -335,7 +357,7 @@ function addItem() {
         title: title,
         description: desc,
         skills: skills,
-        goal: goalTitle,
+        goalId: goalId,
         timer: { elapsed: 0, started: false, paused: false, startTime: null },
         planned: planned,
         complexity: { resistance, importance, urgency },
@@ -358,32 +380,6 @@ function toggleFormFields() {
     }
 }
 
-// ===== ЗАПОЛНЕНИЕ ВЫПАДАЮЩИХ СПИСКОВ =====
-
-function renderSkillChecklist() {
-    const container = document.getElementById('skills-checklist');
-    if (!container) return;
-    container.innerHTML = allSkills.map(skill => `
-        <label class="skill-opt-row">
-            <input type="checkbox" value="${skill}"> ${skill}
-        </label>
-    `).join('');
-}
-
-function renderGoalSelect() {
-    const select = document.getElementById('add-goal');
-    if (!select) return;
-    const current = select.value;
-    select.innerHTML = '<option value="">Без привязки</option>';
-    goals.filter(g => !g.completed).forEach(g => {
-        const opt = document.createElement('option');
-        opt.value = g.id;
-        opt.textContent = g.title;
-        select.appendChild(opt);
-    });
-    if (current) select.value = current;
-}
-
 // ===== ВСПОМОГАТЕЛЬНЫЕ =====
 
 function showToast(msg) {
@@ -399,34 +395,19 @@ function showToast(msg) {
 
 // ===== ИНИЦИАЛИЗАЦИЯ =====
 
-export function initGame() {
-    // Если моки пустые, добавим стартовые данные
-    if (tasks.length === 0) {
-        tasks.push({
-            id: 1,
-            title: 'Дописать модуль авторизации',
-            description: 'Selene + pytest, покрыть негативные сценарии',
-            skills: ['Одноручное оружие'],
-            goal: 'Найти работу',
-            timer: { elapsed: 5025, started: true, paused: false, startTime: Date.now() - 5025 * 1000 },
-            planned: 7200,
-            complexity: { resistance: 50, importance: 50, urgency: 50 },
-            completed: false
-        });
-        tasks.push({
-            id: 2,
-            title: 'Пройти урок: SQL-джойны',
-            description: 'Тема 4, практическая часть',
-            skills: ['Магия'],
-            goal: null,
-            timer: { elapsed: 0, started: false, paused: false, startTime: null },
-            planned: 3600,
-            complexity: { resistance: 40, importance: 30, urgency: 20 },
-            completed: false
-        });
+export async function initGame() {
+    const userId = getCurrentUserId();
+    if (!userId) {
+        console.warn('Пользователь не авторизован');
+        return;
     }
-    if (goals.length === 0) {
-        goals.push({ id: 1, title: 'Найти работу QA-инженера', description: '', tasks: [1], completed: false });
+
+    try {
+        const loadedGoals = await getGoals(userId);
+        goals = loadedGoals;
+    } catch (e) {
+        console.error('Ошибка загрузки целей:', e);
+        goals = [];
     }
 
     // Запускаем таймеры для уже активных задач
@@ -438,11 +419,9 @@ export function initGame() {
 
     renderAll();
 
-    // Обработчики формы
     document.getElementById('add-type').addEventListener('change', toggleFormFields);
     document.getElementById('add-btn').addEventListener('click', addItem);
 
-    // Ползунки обновляют значения
     document.getElementById('add-resistance').addEventListener('input', function () {
         document.getElementById('resistance-val').textContent = this.value;
     });
@@ -453,20 +432,16 @@ export function initGame() {
         document.getElementById('urgency-val').textContent = this.value;
     });
 
-    // Изначально скрываем поля цели
     toggleFormFields();
-
     console.log('Game module initialized');
 }
 
-// Подписываемся на событие загрузки вкладки
-document.addEventListener('tabLoaded', (e) => {
+document.addEventListener('tabActivated', (e) => {
     if (e.detail.tabId === 'game') {
         initGame();
     }
 });
 
-// Если вкладка уже загружена при старте (например, активна по умолчанию)
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
     const gameTab = document.getElementById('tab-game');
     if (gameTab && gameTab.dataset.loaded === 'true') {
