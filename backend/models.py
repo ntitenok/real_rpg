@@ -26,15 +26,27 @@ class Player(db.Model):
     skills = db.Column(db.JSON, default=[])
 
 class Task(db.Model):
-    __tablename__ = 'tasks'
-    
+    __tablename__ = "tasks"
+
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     title = db.Column(db.String(200), nullable=False)
-    completed = db.Column(db.Boolean, default=False)
+    description = db.Column(db.Text, nullable=True)
+    status = db.Column(
+        db.String(20), default="pending"
+    )  # pending, active, in_progress, paused, done
+    is_active = db.Column(db.Boolean, default=False)  # флаг для отображения в "В игре"
+    goal_id = db.Column(db.Integer, db.ForeignKey("goals.id"), nullable=True)
+    skills = db.Column(db.JSON, default=[])  # массив строк (названия навыков)
+    planned_time_minutes = db.Column(db.Integer, default=0)
+    resistance = db.Column(db.Integer, default=0)
+    importance = db.Column(db.Integer, default=0)
+    urgency = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     completed_at = db.Column(db.DateTime, nullable=True)
-    time_spent_minutes = db.Column(db.Integer, default=0)
+    # Поля для будущего (таймеры, XP) – пока не используем, но оставляем
+    elapsed_time_seconds = db.Column(db.Integer, default=0)
+    xp_earned = db.Column(db.Integer, default=0)
 
 class Goal(db.Model):
     __tablename__ = "goals"
