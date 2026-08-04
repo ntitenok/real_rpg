@@ -1427,6 +1427,24 @@ h1 {
   }
 }
 
+/* Спойлеры */
+.spoiler-toggle {
+  background: none;
+  border: none;
+  color: #c9a866;
+  font-family: Georgia, serif;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.spoiler-toggle:hover {
+  color: #e8d5a0;
+}
+
 /* ===== АДАПТИВНОСТЬ ===== */
 @media (max-width: 768px) {
   .main {

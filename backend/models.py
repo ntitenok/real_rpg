@@ -57,6 +57,8 @@ class Goal(db.Model):
     description = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=False)
+    total_tasks = db.Column(db.Integer, default=0)  # <-- добавь эту строку
+    completed_tasks = db.Column(db.Integer, default=0)
     status = db.Column(
         db.String(20), default="active"
     )  # active, done — позже пригодится
