@@ -317,10 +317,13 @@ async function addItem() {
 function toggleFormFields() {
     const type = document.getElementById('add-type').value;
     const taskFields = document.getElementById('task-fields');
+    const activeWrapper = document.getElementById('task-active-wrapper');
     if (type === 'goal') {
         taskFields.style.display = 'none';
+        if (activeWrapper) activeWrapper.style.display = 'none';
     } else {
         taskFields.style.display = 'block';
+        if (activeWrapper) activeWrapper.style.display = 'flex';
     }
 }
 
@@ -376,6 +379,20 @@ export async function initGame() {
 
     toggleFormFields();
     console.log('Game module initialized');
+
+    // Обработчик спойлеров
+    document.querySelectorAll('.spoiler-toggle').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const targetId = this.dataset.target;
+            const target = document.getElementById(targetId);
+            if (target) {
+                const isHidden = target.style.display === 'none' || target.style.display === '';
+                target.style.display = isHidden ? 'block' : 'none';
+                // меняем текст кнопки (опционально)
+                this.innerHTML = this.innerHTML.includes('👁️') ? '👁️‍🗨️' : '👁️';
+            }
+        });
+    });
 }
 
 document.addEventListener('tabActivated', (e) => {

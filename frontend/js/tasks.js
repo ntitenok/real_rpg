@@ -1,31 +1,10 @@
 // tasks.js — логика вкладки «Журнал»
 
 import { getCurrentUserId } from './auth.js';
-import { getGoals } from './api.js';
+import { getGoals, getTasks } from './api.js';   // <-- добавили getTasks
 
 let journalGoals = [];
-let journalTasks = [
-    {
-        id: 1,
-        title: 'Обновить резюме',
-        description: '',
-        status: 'done',
-        xp: 40,
-        time: null,
-        goalId: 'goal-1',
-        skills: ['Красноречие']
-    },
-    {
-        id: 2,
-        title: 'Дописать модуль авторизации',
-        description: 'Selene + pytest',
-        status: 'progress',
-        xp: 0,
-        time: 5025,
-        goalId: 'goal-1',
-        skills: ['Одноручное оружие']
-    }
-];
+let journalTasks = [];
 
 // ===== СОСТОЯНИЕ =====
 let journalState = {
@@ -43,14 +22,6 @@ function getStatusIcon(status) {
         pending: `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2"><circle cx="12" cy="12" r="8"/></svg>`
     };
     return icons[status] || icons.pending;
-}
-
-function formatTime(seconds) {
-    if (!seconds) return '—';
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
 function escapeHtml(text) {
@@ -79,9 +50,9 @@ function renderGoalsMode(tasks) {
     const noGoalTasks = [];
 
     filtered.forEach(task => {
-        if (task.goalId) {
-            if (!goalsMap[task.goalId]) goalsMap[task.goalId] = [];
-            goalsMap[task.goalId].push(task);
+        if (task.goal_id) {   // <-- исправлено: goalId → goal_id
+            if (!goalsMap[task.goal_id]) goalsMap[task.goal_id] = [];
+            goalsMap[task.goal_id].push(task);
         } else {
             noGoalTasks.push(task);
         }
@@ -117,9 +88,9 @@ function renderGoalsMode(tasks) {
                                 <div class="status-icon">${getStatusIcon(task.status)}</div>
                                 <div class="jtask-name">${escapeHtml(task.title)}</div>
                                 <div class="jtask-tags">
-                                    ${task.skills.map(s => `<div class="jtask-tag"><svg viewBox="0 0 24 24" fill="none" stroke="#a89a80" stroke-width="1.8"><path d="M6 18L18 6M14 4l6 6"/></svg>${escapeHtml(s)}</div>`).join('')}
+                                    ${(task.skills || []).map(s => `<div class="jtask-tag"><svg viewBox="0 0 24 24" fill="none" stroke="#a89a80" stroke-width="1.8"><path d="M6 18L18 6M14 4l6 6"/></svg>${escapeHtml(s)}</div>`).join('')}
                                 </div>
-                                <div class="jtask-xp">${task.status === 'done' ? `+${task.xp} XP` : (task.time ? formatTime(task.time) : '—')}</div>
+                                <div class="jtask-xp">${task.status === 'done' ? `+${task.xp_earned || 0} XP` : (task.planned_time_minutes ? `${task.planned_time_minutes} мин` : '—')}</div>
                             </div>
                         `).join('')}
                 </div>
@@ -144,9 +115,9 @@ function renderGoalsMode(tasks) {
                             <div class="status-icon">${getStatusIcon(task.status)}</div>
                             <div class="jtask-name">${escapeHtml(task.title)}</div>
                             <div class="jtask-tags">
-                                ${task.skills.map(s => `<div class="jtask-tag"><svg viewBox="0 0 24 24" fill="none" stroke="#a89a80" stroke-width="1.8"><path d="M6 18L18 6M14 4l6 6"/></svg>${escapeHtml(s)}</div>`).join('')}
+                                ${(task.skills || []).map(s => `<div class="jtask-tag"><svg viewBox="0 0 24 24" fill="none" stroke="#a89a80" stroke-width="1.8"><path d="M6 18L18 6M14 4l6 6"/></svg>${escapeHtml(s)}</div>`).join('')}
                             </div>
-                            <div class="jtask-xp">${task.status === 'done' ? `+${task.xp} XP` : (task.time ? formatTime(task.time) : '—')}</div>
+                            <div class="jtask-xp">${task.status === 'done' ? `+${task.xp_earned || 0} XP` : (task.planned_time_minutes ? `${task.planned_time_minutes} мин` : '—')}</div>
                         </div>
                     `).join('')}
                 </div>
@@ -185,7 +156,7 @@ function renderAZMode(tasks) {
     letters.forEach(letter => {
         html += `<div class="az-letter">${letter}</div>`;
         groups[letter].forEach(task => {
-            const goal = journalGoals.find(g => g.id === task.goalId);
+            const goal = journalGoals.find(g => g.id === task.goal_id);   // <-- исправлено
             const goalLabel = goal ? goal.title : 'Без цели';
             html += `
                 <div class="az-row ${task.status}">
@@ -223,11 +194,16 @@ export async function initJournal() {
     }
 
     try {
-        const loadedGoals = await getGoals(userId);
+        const [loadedGoals, loadedTasks] = await Promise.all([
+            getGoals(userId),
+            getTasks(userId)
+        ]);
         journalGoals = loadedGoals;
+        journalTasks = loadedTasks;
     } catch (e) {
-        console.error('Ошибка загрузки целей:', e);
+        console.error('Ошибка загрузки данных для журнала:', e);
         journalGoals = [];
+        journalTasks = [];
     }
 
     // Обработчики переключения режимов

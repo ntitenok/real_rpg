@@ -1,6 +1,5 @@
-from flask import Blueprint, request, jsonify
-from datetime import datetime
-from models import db, Task, Goal
+from flask import Blueprint, jsonify, request
+from models import Goal, Task, db
 
 tasks_bp = Blueprint("tasks", __name__)
 
@@ -65,11 +64,11 @@ def create_task():
     db.session.add(task)
     db.session.commit()
 
-    # Если задача привязана к цели, увеличиваем total_tasks в цели
-    if task.goal_id:
+    # Если задача активна и привязана к цели, активируем цель
+    if is_active and task.goal_id:
         goal = Goal.query.get(task.goal_id)
-        if goal:
-            goal.total_tasks = (goal.total_tasks or 0) + 1
+        if goal and not goal.is_active:
+            goal.is_active = True
             db.session.commit()
 
     return jsonify(

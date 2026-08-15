@@ -114,10 +114,16 @@
         </div>
       </div>
 
-      <div style="display:flex; align-items:center; gap:12px; margin-top:6px; flex-wrap:wrap;">
-        <button class="btn-add" id="add-btn"><svg viewBox="0 0 24 24" fill="none" stroke="#f0dfa8" stroke-width="1.8">
-            <path d="M12 5v14M5 12h14" />
-          </svg>Добавить</button>
+      <!-- Кнопка Добавить всегда видна -->
+      <button class="btn-add" id="add-btn" style="margin-top:6px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#f0dfa8" stroke-width="1.8">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+        Добавить
+      </button>
+      
+      <!-- Чекбокс (скрывается при выборе "Цель") -->
+      <div id="task-active-wrapper" style="display:flex; align-items:center; gap:6px; margin-top:4px; flex-wrap:wrap;">
         <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:#c4b696;">
           <input type="checkbox" id="add-is-active" checked style="accent-color:#c9a866; width:16px; height:16px;">
           Сделать задачу активной
