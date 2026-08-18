@@ -1,7 +1,7 @@
 // game.js — логика экрана «В игре»
 
 import { getCurrentUserId } from './auth.js';
-import { getGoals, createGoal } from './api.js';
+import { getGoals, createGoal, getTasks, createTask } from './api.js';
 
 // ===== МОК-ДАННЫЕ =====
 let playerStats = {
@@ -25,34 +25,9 @@ let abilities = [
     { id: 'command', name: 'Запомнил команду', icon: '📚', status: 'ready', cooldown: '3/5' }
 ];
 
-let tasks = [
-    {
-        id: 1,
-        title: 'Дописать модуль авторизации',
-        description: 'Selene + pytest, покрыть негативные сценарии',
-        skills: ['Одноручное оружие'],
-        goalId: null,
-        timer: { elapsed: 5025, started: true, paused: false, startTime: Date.now() - 5025 * 1000 },
-        planned: 7200,
-        complexity: { resistance: 50, importance: 50, urgency: 50 },
-        completed: false
-    },
-    {
-        id: 2,
-        title: 'Пройти урок: SQL-джойны',
-        description: 'Тема 4, практическая часть',
-        skills: ['Магия'],
-        goalId: null,
-        timer: { elapsed: 0, started: false, paused: false, startTime: null },
-        planned: 3600,
-        complexity: { resistance: 40, importance: 30, urgency: 20 },
-        completed: false
-    }
-];
-
+let tasks = [];
 let goals = [];
 let allSkills = ['Гибкость мышления', 'Красноречие', 'Магия', 'Медитация', 'Одноручное оружие', 'Планирование', 'Скрытность', 'Стойкость'];
-const timerIntervals = {};
 
 // ===== ОТРИСОВКА =====
 
@@ -114,41 +89,30 @@ function renderAbilities() {
 function renderTasks() {
     const container = document.getElementById('active-tasks-list');
     if (!container) return;
-    const activeTasks = tasks.filter(t => !t.completed);
+    const activeTasks = tasks.filter(t => t.status === 'active');
     if (activeTasks.length === 0) {
         container.innerHTML = '<p class="empty" style="padding:20px 0; color:#877a63;">Нет активных задач</p>';
         return;
     }
     container.innerHTML = activeTasks.map(task => {
-        const elapsed = task.timer.elapsed;
+        const elapsed = task.elapsed_time_seconds || 0;
         const hours = Math.floor(elapsed / 3600);
         const minutes = Math.floor((elapsed % 3600) / 60);
         const seconds = elapsed % 60;
         const timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-        const planned = task.planned || 0;
-        const progress = planned > 0 ? Math.min(100, (elapsed / planned) * 100) : 0;
-        const complexityFactor = 1 + (task.complexity.resistance + task.complexity.importance + task.complexity.urgency) / 300;
+        const planned = task.planned_time_minutes || 0;
+        const progress = planned > 0 ? Math.min(100, (elapsed / 60 / planned) * 100) : 0;
+        const complexityFactor = 1 + (task.resistance + task.importance + task.urgency) / 300;
         const xpTime = Math.round(elapsed * complexityFactor);
         const xpTimeStr = `${Math.floor(xpTime / 3600)}:${String(Math.floor((xpTime % 3600) / 60)).padStart(2, '0')}:${String(xpTime % 60).padStart(2, '0')}`;
 
-        // eslint-disable-next-line no-useless-assignment
-        let actionButtons = '';
-        if (!task.timer.started) {
-            actionButtons = `<button class="task-btn start" data-id="${task.id}" data-action="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l11 7-11 7z"/></svg>Старт</button>`;
-        } else if (task.timer.paused) {
-            actionButtons = `
-                <button class="task-btn resume" data-id="${task.id}" data-action="resume"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l11 7-11 7z"/></svg>Продолжить</button>
-                <button class="task-btn stop" data-id="${task.id}" data-action="stop"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12"/></svg>Стоп</button>
-            `;
-        } else {
-            actionButtons = `
-                <button class="task-btn pause" data-id="${task.id}" data-action="pause"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>Пауза</button>
-                <button class="task-btn stop" data-id="${task.id}" data-action="stop"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12"/></svg>Стоп</button>
-            `;
-        }
+        let actionButtons = `
+            <button class="task-btn start" data-id="${task.id}" data-action="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l11 7-11 7z"/></svg>Старт</button>
+            <button class="task-btn stop" data-id="${task.id}" data-action="stop"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12"/></svg>Стоп</button>
+        `;
 
-        const skillTags = task.skills.map(s => `<span class="task-tag"><svg viewBox="0 0 24 24" fill="none" stroke="#a89a80" stroke-width="1.8"><path d="M6 18L18 6M14 4l6 6"/></svg>${s}</span>`).join('');
-        const goal = goals.find(g => g.id === task.goalId);
+        const skillTags = (task.skills || []).map(s => `<span class="task-tag"><svg viewBox="0 0 24 24" fill="none" stroke="#a89a80" stroke-width="1.8"><path d="M6 18L18 6M14 4l6 6"/></svg>${s}</span>`).join('');
+        const goal = goals.find(g => g.id === task.goal_id);
         const goalTag = goal ? `<span class="task-tag"><svg viewBox="0 0 24 24" fill="none" stroke="#a89a80" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/></svg>${goal.title}</span>` : '';
 
         return `
@@ -180,7 +144,8 @@ function renderTasks() {
             e.stopPropagation();
             const id = parseInt(this.dataset.id);
             const action = this.dataset.action;
-            handleTaskAction(id, action);
+            // пока только заглушка
+            showToast(`Действие "${action}" для задачи "${id}" пока не реализовано`);
         });
     });
 }
@@ -242,61 +207,9 @@ function renderAll() {
     renderGoalSelect();
 }
 
-// ===== ДЕЙСТВИЯ С ЗАДАЧАМИ =====
+// ===== ДЕЙСТВИЯ С ЗАДАЧАМИ (заглушки) =====
 
-function handleTaskAction(id, action) {
-    const task = tasks.find(t => t.id === id);
-    if (!task) return;
-
-    switch (action) {
-        case 'start':
-            if (!task.timer.started) {
-                task.timer.started = true;
-                task.timer.paused = false;
-                task.timer.startTime = Date.now() - task.timer.elapsed * 1000;
-                startTimerInterval(task.id);
-            }
-            break;
-        case 'pause':
-            if (task.timer.started && !task.timer.paused) {
-                task.timer.paused = true;
-                if (timerIntervals[task.id]) clearInterval(timerIntervals[task.id]);
-                const now = Date.now();
-                task.timer.elapsed = Math.floor((now - task.timer.startTime) / 1000);
-            }
-            break;
-        case 'resume':
-            if (task.timer.paused) {
-                task.timer.paused = false;
-                task.timer.startTime = Date.now() - task.timer.elapsed * 1000;
-                startTimerInterval(task.id);
-            }
-            break;
-        case 'stop':
-            if (timerIntervals[task.id]) clearInterval(timerIntervals[task.id]);
-            task.completed = true;
-            showToast(`Задача "${task.title}" завершена! XP начислен.`);
-            renderAll();
-            break;
-    }
-    renderTasks();
-}
-
-function startTimerInterval(taskId) {
-    if (timerIntervals[taskId]) clearInterval(timerIntervals[taskId]);
-    timerIntervals[taskId] = setInterval(() => {
-        const task = tasks.find(t => t.id === taskId);
-        if (!task || task.completed) {
-            clearInterval(timerIntervals[taskId]);
-            return;
-        }
-        if (!task.timer.paused && task.timer.started) {
-            const now = Date.now();
-            task.timer.elapsed = Math.floor((now - task.timer.startTime) / 1000);
-            renderTasks();
-        }
-    }, 1000);
-}
+// (пусто, пока не реализовано)
 
 // ===== ДОБАВЛЕНИЕ ЗАДАЧИ / ЦЕЛИ =====
 
@@ -334,49 +247,83 @@ async function addItem() {
     }
 
     // Добавление задачи
+    const userId = getCurrentUserId();
+    if (!userId) {
+        showToast('Пользователь не авторизован');
+        return;
+    }
+
     const skillCheckboxes = document.querySelectorAll('#skills-checklist input[type="checkbox"]:checked');
     const skills = Array.from(skillCheckboxes).map(cb => cb.value);
     const goalSelect = document.getElementById('add-goal');
     const goalId = goalSelect.value ? parseInt(goalSelect.value) : null;
-    const resistance = parseInt(document.getElementById('add-resistance').value);
-    const importance = parseInt(document.getElementById('add-importance').value);
-    const urgency = parseInt(document.getElementById('add-urgency').value);
-    const plannedInput = document.getElementById('add-planned').value;
-    let planned = 0;
-    if (plannedInput) {
-        const parts = plannedInput.split(':');
-        if (parts.length === 2) {
-            planned = parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60;
-        } else if (parts.length === 1) {
-            planned = parseInt(parts[0]) * 3600;
-        }
-    }
+    const isActive = document.getElementById('add-is-active').checked;
+    const plannedMinutes = parseInt(document.getElementById('add-planned').value) || 0;
+    const resistance = parseInt(document.getElementById('add-resistance').value) || 0;
+    const importance = parseInt(document.getElementById('add-importance').value) || 0;
+    const urgency = parseInt(document.getElementById('add-urgency').value) || 0;
 
-    const newTask = {
-        id: Date.now(),
-        title: title,
+    const taskData = {
+        user_id: userId,
+        title,
         description: desc,
+        is_active: isActive,
+        goal_id: goalId,
         skills: skills,
-        goalId: goalId,
-        timer: { elapsed: 0, started: false, paused: false, startTime: null },
-        planned: planned,
-        complexity: { resistance, importance, urgency },
-        completed: false
+        planned_time_minutes: plannedMinutes,
+        resistance,
+        importance,
+        urgency
     };
-    tasks.push(newTask);
-    showToast(`Задача "${title}" добавлена`);
-    document.getElementById('add-title').value = '';
-    document.getElementById('add-desc').value = '';
-    renderAll();
+
+    try {
+        const result = await createTask(taskData);
+        if (result) {
+            showToast(`Задача "${title}" добавлена`);
+            document.getElementById('add-title').value = '';
+            document.getElementById('add-desc').value = '';
+            document.getElementById('add-planned').value = '0';
+            document.getElementById('add-resistance').value = '0';
+            document.getElementById('add-importance').value = '0';
+            document.getElementById('add-urgency').value = '0';
+            document.getElementById('resistance-val').textContent = '0';
+            document.getElementById('importance-val').textContent = '0';
+            document.getElementById('urgency-val').textContent = '0';
+            document.getElementById('add-is-active').checked = true;
+
+            // Если задача активна и привязана к цели, активируем цель (локально)
+            if (isActive && goalId) {
+                const goal = goals.find(g => g.id === goalId);
+                if (goal) {
+                    goal.is_active = true;
+                }
+            }
+
+            // Перезагружаем список задач и целей
+            const [updatedTasks, updatedGoals] = await Promise.all([
+                getTasks(userId),
+                getGoals(userId)
+            ]);
+            tasks = updatedTasks;
+            goals = updatedGoals;
+            renderAll();
+        }
+    } catch (e) {
+        showToast('Ошибка при создании задачи');
+        console.error(e);
+    }
 }
 
 function toggleFormFields() {
     const type = document.getElementById('add-type').value;
     const taskFields = document.getElementById('task-fields');
+    const activeWrapper = document.getElementById('task-active-wrapper');
     if (type === 'goal') {
         taskFields.style.display = 'none';
+        if (activeWrapper) activeWrapper.style.display = 'none';
     } else {
         taskFields.style.display = 'block';
+        if (activeWrapper) activeWrapper.style.display = 'flex';
     }
 }
 
@@ -403,19 +350,17 @@ export async function initGame() {
     }
 
     try {
-        const loadedGoals = await getGoals(userId);
+        const [loadedGoals, loadedTasks] = await Promise.all([
+            getGoals(userId),
+            getTasks(userId)
+        ]);
         goals = loadedGoals;
+        tasks = loadedTasks;
     } catch (e) {
-        console.error('Ошибка загрузки целей:', e);
+        console.error('Ошибка загрузки данных:', e);
         goals = [];
+        tasks = [];
     }
-
-    // Запускаем таймеры для уже активных задач
-    tasks.forEach(task => {
-        if (task.timer.started && !task.timer.paused && !task.completed) {
-            startTimerInterval(task.id);
-        }
-    });
 
     renderAll();
 
@@ -434,6 +379,20 @@ export async function initGame() {
 
     toggleFormFields();
     console.log('Game module initialized');
+
+    // Обработчик спойлеров
+    document.querySelectorAll('.spoiler-toggle').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const targetId = this.dataset.target;
+            const target = document.getElementById(targetId);
+            if (target) {
+                const isHidden = target.style.display === 'none' || target.style.display === '';
+                target.style.display = isHidden ? 'block' : 'none';
+                // меняем текст кнопки (опционально)
+                this.innerHTML = this.innerHTML.includes('👁️') ? '👁️‍🗨️' : '👁️';
+            }
+        });
+    });
 }
 
 document.addEventListener('tabActivated', (e) => {
